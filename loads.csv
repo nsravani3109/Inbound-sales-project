@@ -1,0 +1,6 @@
+load_id,origin,destination,pickup_datetime,delivery_datetime,equipment_type,loadboard_rate,notes,weight,num_of_pieces,miles,dimensions,commodity_type
+L001,Los Angeles,New York,2025-09-01 08:00,2025-09-05 17:00,Flatbed,2500,Fragile cargo,10000,50,2800,20x8x8,Electronics
+L002,San Francisco,Chicago,2025-09-02 09:00,2025-09-06 18:00,Van,1800,Handle with care,8000,40,2100,15x7x7,Textiles
+L003,Los Angeles,Houston,2025-09-03 10:00,2025-09-07 16:00,Reefer,2200,Keep frozen,12000,60,1550,25x8x8,Frozen Goods
+L004,New York,Miami,2025-09-04 07:00,2025-09-08 15:00,Flatbed,2000,High value,9000,45,1300,18x8x8,Automotive
+L005,Chicago,San Francisco,2025-09-05 12:00,2025-09-09 20:00,Van,1900,Standard load,8500,42,2100,15x7x7,Textiles
