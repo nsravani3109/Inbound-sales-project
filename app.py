@@ -5,7 +5,7 @@ from load_manager import LoadManager
 from negotiation import evaluate_counter_offer
 from extract_data import extract_call_data
 from classify import classify_outcome, classify_sentiment
-from db import SessionLocal, Negotiation
+from db import SessionLocal, Negotiation, Load
 import uuid
 
 app = FastAPI()
@@ -59,11 +59,15 @@ def validate_mc(request: MCRequest):
         "session_id": str(uuid.uuid4())
     }
 
-@app.post("/insert_load")
-def insert_load(request: LoadInsertRequest):
+@app.post("/create_load")
+def create_load(request: LoadCreateRequest):
     db = SessionLocal()
-    # Use your LoadManager DB model
-    Load = load_manager.db.mapper.classes.Load
+    # Check if load already exists
+    existing = db.query(Load).filter_by(load_id=request.load_id).first()
+    if existing:
+        db.close()
+        return {"error": f"Load {request.load_id} already exists."}
+
     load = Load(
         load_id=request.load_id,
         origin=request.origin,
@@ -82,7 +86,7 @@ def insert_load(request: LoadInsertRequest):
     db.add(load)
     db.commit()
     db.close()
-    return {"message": f"Load {request.load_id} inserted successfully."}
+    return {"message": f"Load {request.load_id} created successfully."}
 
 @app.post("/search_loads")
 def search_loads_endpoint(request: LoadSearchRequest):
@@ -91,33 +95,46 @@ def search_loads_endpoint(request: LoadSearchRequest):
 
 @app.post("/evaluate_counter_offer")
 def evaluate_counter_offer_endpoint(request: CounterOfferRequest):
-    db = SessionLocal()
-    load = db.query(load_manager.db.query(load_manager.db.mapper.classes.Load).filter_by(load_id=request.load_id).first()).first().__dict__
-    agreed_rate, round_number = evaluate_counter_offer(load, request.carrier_rate, request.round_number)
+    try:
+        db = SessionLocal()
+        # Query the load properly
+        load = db.query(Load).filter_by(load_id=request.load_id).first()
+        if not load:
+            db.close()
+            return {"error": f"Load {request.load_id} not found"}
 
-    db.add(Negotiation(
-        session_id=request.session_id,
-        load_id=load['load_id'],
-        carrier_rate=request.carrier_rate,
-        adjusted_rate=agreed_rate if agreed_rate else None,
-        round_number=round_number,
-        status="accepted" if agreed_rate else "rejected"
-    ))
-    db.commit()
-    db.close()
+        # Convert Load object to dict
+        load_dict = {c.name: getattr(load, c.name) for c in load.__table__.columns}
 
-    if agreed_rate:
-        call_data = extract_call_data(load, agreed_rate, round_number)
-        outcome = classify_outcome(call_data)
-        sentiment = classify_sentiment(call_data)
-        return {
-            "agreed_rate": agreed_rate,
-            "round_number": round_number,
-            "call_data": call_data,
-            "outcome": outcome,
-            "sentiment": sentiment,
-            "next_action": "transfer_to_rep"
-        }
-    else:
-        return {"message": "Counter offer rejected", "next_action": "negotiate_again"}
+        # Evaluate counter offer
+        agreed_rate, round_number = evaluate_counter_offer(load_dict, request.carrier_rate, request.round_number)
+
+        # Save negotiation
+        db.add(Negotiation(
+            session_id=request.session_id,
+            load_id=load.load_id,
+            carrier_rate=request.carrier_rate,
+            adjusted_rate=agreed_rate if agreed_rate else None,
+            round_number=round_number,
+            status="accepted" if agreed_rate else "rejected"
+        ))
+        db.commit()
+        db.close()
+
+        if agreed_rate:
+            call_data = extract_call_data(load_dict, agreed_rate, round_number)
+            outcome = classify_outcome(call_data)
+            sentiment = classify_sentiment(call_data)
+            return {
+                "agreed_rate": agreed_rate,
+                "round_number": round_number,
+                "call_data": call_data,
+                "outcome": outcome,
+                "sentiment": sentiment,
+                "next_action": "transfer_to_rep"
+            }
+        else:
+            return {"message": "Counter offer rejected", "next_action": "negotiate_again"}
+    except Exception as e:
+        return {"error": str(e)}
 
