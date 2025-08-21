@@ -34,6 +34,21 @@ class CounterOfferRequest(BaseModel):
     carrier_rate: float
     round_number: int = 1
 
+class LoadInsertRequest(BaseModel):
+    load_id: str
+    origin: str
+    destination: str
+    pickup_datetime: str
+    delivery_datetime: str
+    equipment_type: str
+    loadboard_rate: float
+    notes: str = None
+    weight: float = None
+    num_of_pieces: int = None
+    miles: float = None
+    dimensions: str = None
+    commodity_type: str = None
+
 @app.post("/validate_mc")
 def validate_mc(request: MCRequest):
     is_verified, insurance_ok = verify_mc_number(request.mc_number)
@@ -43,6 +58,31 @@ def validate_mc(request: MCRequest):
         "status": "eligible" if is_verified and insurance_ok else "ineligible",
         "session_id": str(uuid.uuid4())
     }
+
+@app.post("/insert_load")
+def insert_load(request: LoadInsertRequest):
+    db = SessionLocal()
+    # Use your LoadManager DB model
+    Load = load_manager.db.mapper.classes.Load
+    load = Load(
+        load_id=request.load_id,
+        origin=request.origin,
+        destination=request.destination,
+        pickup_datetime=request.pickup_datetime,
+        delivery_datetime=request.delivery_datetime,
+        equipment_type=request.equipment_type,
+        loadboard_rate=request.loadboard_rate,
+        notes=request.notes,
+        weight=request.weight,
+        num_of_pieces=request.num_of_pieces,
+        miles=request.miles,
+        dimensions=request.dimensions,
+        commodity_type=request.commodity_type
+    )
+    db.add(load)
+    db.commit()
+    db.close()
+    return {"message": f"Load {request.load_id} inserted successfully."}
 
 @app.post("/search_loads")
 def search_loads_endpoint(request: LoadSearchRequest):
@@ -80,3 +120,4 @@ def evaluate_counter_offer_endpoint(request: CounterOfferRequest):
         }
     else:
         return {"message": "Counter offer rejected", "next_action": "negotiate_again"}
+
