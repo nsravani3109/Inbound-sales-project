@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-sqlalchemy
-pandas
-python-dotenv
-fuzzywuzzy[speedup]
+fastapi==0.103.2
+uvicorn[standard]==0.23.2
+sqlalchemy==2.0.20
+pandas==2.1.1
+python-dotenv==1.0.0
+fuzzywuzzy[speedup]==0.18.0
+pydantic==2.6.0
