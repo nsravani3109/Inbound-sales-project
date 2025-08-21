@@ -60,7 +60,7 @@ def validate_mc(request: MCRequest):
     }
 
 @app.post("/create_load")
-def create_load(request: LoadCreateRequest):
+def create_load(request: LoadInsertRequest):
     db = SessionLocal()
     # Check if load already exists
     existing = db.query(Load).filter_by(load_id=request.load_id).first()
