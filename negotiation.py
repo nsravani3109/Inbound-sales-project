@@ -1,11 +1,12 @@
 def evaluate_counter_offer(load, carrier_rate, round_number):
-    """
-    Evaluate the carrier's counter offer.
-    Accept if within 90% of the listed loadboard_rate.
-    Returns (agreed_rate or None, round_number)
-    """
-    min_rate = load['loadboard_rate'] * 0.9
+    max_rounds = 3
+    load_rate = load['loadboard_rate']
+    min_acceptable = load_rate * 0.9
 
-    if carrier_rate >= min_rate:
-        return carrier_rate, round_number
-    return None, round_number
+    if carrier_rate >= min_acceptable:
+        return load_rate, round_number
+    else:
+        if round_number < max_rounds:
+            return None, round_number + 1
+        else:
+            return None, round_number 
