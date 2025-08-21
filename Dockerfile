@@ -11,7 +11,7 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Initialize database and seed loads
-RUN python init_db.py && python seed_loads.py
+RUN python init_db.py && python seeds_loads.py
 
 # Expose the port (optional, Cloud Run uses $PORT)
 EXPOSE 8080
