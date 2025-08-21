@@ -1,20 +1,24 @@
-# Use official Python slim image
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy project files
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libatlas-base-dev \
+    gfortran \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy files
 COPY . /app
 
-# Install dependencies
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Initialize database and seed loads
+# Initialize DB and seed loads
 RUN python init_db.py && python seeds_loads.py
 
-# Expose the port (optional, Cloud Run uses $PORT)
+# Expose port
 EXPOSE 8080
 
-# Run FastAPI with dynamic port from Cloud Run
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}"]
